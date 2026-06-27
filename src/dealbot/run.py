@@ -255,7 +255,10 @@ def _run_deals(client: ITADClient, cfg: Config, dry_run: bool) -> int:
     summaries: list[tuple[str, list[Deal], list[Deal], dict]] = []
     for token in tokens:
         deals = _collect_shop_deals(client, cfg, token)
-        label = deals[0].shop_name if deals else (token.title() or "전체")
+        if not deals:  # 딜 0개 상점은 요약 생략 (전송 노이즈 방지)
+            log.info("[%s] 현재 할인 0개 — 요약 생략", token or "전체")
+            continue
+        label = deals[0].shop_name
         top = deals[:5]
         _enrich_reviews(client, top)
         anchor = f"#{token}" if token and cfg.page_base_url else ""

@@ -5,7 +5,8 @@
  * 이 Worker 가 키를 secret 으로 숨긴 채 중계하고, 엣지 캐시로 ITAD rate limit 을 보호한다.
  *
  *   GET /deals?country=KR&shops=steam,epic&max=1500
- *     -> { generated_at, country, count, deals: [{title, shop, cut, price, regular, low, currency, url, thumb}] }
+ *     -> { generated_at, country, count,
+ *          deals: [{id, title, shop, cut, price, regular, low, currency, url, thumb, banner}] }
  *
  * 배포: worker/ 에서  `npx wrangler deploy`
  * 키 등록: `npx wrangler secret put ITAD_API_KEY`
