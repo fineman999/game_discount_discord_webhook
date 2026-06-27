@@ -11,11 +11,17 @@
          margin: 0; padding: 1rem; max-width: 1100px; margin-inline: auto;
          background: #0f1115; color: #e7e9ee; }
   h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
-  .sub { color: #9aa0ab; font-size: .85rem; margin-bottom: 1rem; }
-  .controls { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  .sub { color: #9aa0ab; font-size: .85rem; margin-bottom: .75rem; }
+  nav { margin-bottom: 1rem; }
+  nav a { color: #8ab4ff; text-decoration: none; margin-right: .75rem; font-size: .9rem; }
+  .controls { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem;
+              position: sticky; top: 0; background: #0f1115; padding: .5rem 0; z-index: 5; }
   input, select { background: #1a1d24; color: #e7e9ee; border: 1px solid #2a2f3a;
                   border-radius: 8px; padding: .5rem .6rem; font-size: .9rem; }
   input { flex: 1 1 240px; }
+  section { margin-bottom: 2rem; }
+  h2 { font-size: 1.1rem; border-bottom: 1px solid #232834; padding-bottom: .35rem; }
+  h2 .count { color: #9aa0ab; font-weight: 400; font-size: .85rem; }
   .card { display: grid; grid-template-columns: 56px 1fr auto; gap: .75rem;
           align-items: center; background: #161922; border: 1px solid #232834;
           border-radius: 10px; padding: .6rem .8rem; margin-bottom: .5rem; }
@@ -29,14 +35,15 @@
          border-radius: 6px; padding: .1rem .4rem; font-size: .85rem; }
   .price { font-weight: 700; margin-top: .2rem; }
   .old { color: #7b818d; text-decoration: line-through; font-size: .8rem; margin-left: .35rem; }
+  .status { color: #9aa0ab; padding: .5rem 0; }
   footer { color: #7b818d; font-size: .8rem; margin-top: 1.5rem; text-align: center; }
   footer a { color: #9aa0ab; }
-  #status { color: #9aa0ab; padding: 1rem 0; }
 </style>
 </head>
 <body>
 <h1>오늘의 게임 할인</h1>
-<div class="sub" id="sub">불러오는 중…</div>
+<div class="sub" id="sub">상점별 할인 목록 (ITAD 인기순)</div>
+<nav id="nav"></nav>
 <div class="controls">
   <input id="q" type="search" placeholder="게임 이름 검색…" autocomplete="off">
   <select id="sort">
@@ -44,24 +51,34 @@
     <option value="cut">할인율 높은순</option>
     <option value="price">가격 낮은순</option>
   </select>
-  <select id="shop"><option value="">모든 상점</option></select>
 </div>
-<div id="status">⏳ 데이터를 불러오는 중…</div>
-<div id="list"></div>
+<div id="sections"></div>
 <footer>데이터 제공 <a href="https://isthereanydeal.com" rel="noopener">IsThereAnyDeal</a></footer>
 
 <script>
 // ── 배포한 Cloudflare Worker URL (worker/README.md 참고) ──
 const API_BASE = "https://deal-proxy.chanpark.workers.dev";
-const QUERY = "country=KR&shops=steam,epic&max=1500";
+const COUNTRY = "KR";
+const PER_SHOP_MAX = 800;
+// 표로 따로 보여줄 상점들 (token 은 Worker 가 ITAD 상점 ID 로 해석)
+const SHOPS = [
+  { token: "steam", label: "Steam" },
+  { token: "epic", label: "Epic Games" },
+];
 
-let DATA = [];
-const list = document.getElementById('list');
-const statusEl = document.getElementById('status');
-const sub = document.getElementById('sub');
+const store = {};
 const q = document.getElementById('q');
 const sortSel = document.getElementById('sort');
-const shopSel = document.getElementById('shop');
+const sub = document.getElementById('sub');
+
+document.getElementById('nav').innerHTML =
+  SHOPS.map(s => `<a href="#${s.token}">${s.label}</a>`).join('');
+document.getElementById('sections').innerHTML = SHOPS.map(s => `
+  <section id="${s.token}">
+    <h2>${s.label} <span class="count" id="count-${s.token}"></span></h2>
+    <div class="status" id="status-${s.token}">⏳ 불러오는 중…</div>
+    <div class="list" id="list-${s.token}"></div>
+  </section>`).join('');
 
 const SYM = { KRW: "₩", USD: "$", EUR: "€", GBP: "£", JPY: "¥" };
 function fmt(amount, cur) {
@@ -74,19 +91,8 @@ function fmt(amount, cur) {
 }
 function esc(s) { const e = document.createElement('div'); e.textContent = s ?? ""; return e.innerHTML; }
 
-function render() {
-  const term = q.value.trim().toLowerCase();
-  const shop = shopSel.value;
-  let rows = DATA.filter(d =>
-    (!term || d.title.toLowerCase().includes(term)) && (!shop || d.shop === shop));
-  const by = sortSel.value;
-  if (by === 'cut') rows.sort((a, b) => b.cut - a.cut);
-  else if (by === 'price') rows.sort((a, b) => a.price - b.price);
-  // 'pop' 은 Worker 가 준 원래 순서(인기순) 유지
-
-  statusEl.style.display = rows.length ? 'none' : 'block';
-  if (!rows.length) statusEl.textContent = '검색 결과가 없어요.';
-  list.innerHTML = rows.map(d => `
+function card(d) {
+  return `
     <div class="card">
       ${d.thumb ? `<img loading="lazy" src="${esc(d.thumb)}" alt="">` : '<div></div>'}
       <div>
@@ -97,32 +103,42 @@ function render() {
         <span class="cut">-${d.cut}%</span>
         <div class="price">${esc(fmt(d.price, d.currency))}<span class="old">${esc(fmt(d.regular, d.currency))}</span></div>
       </div>
-    </div>`).join('');
+    </div>`;
 }
 
-async function load() {
+function renderShop(shop) {
+  const data = store[shop.token] || [];
+  const term = q.value.trim().toLowerCase();
+  let rows = data.filter(d => !term || d.title.toLowerCase().includes(term));
+  const by = sortSel.value;
+  if (by === 'cut') rows.sort((a, b) => b.cut - a.cut);
+  else if (by === 'price') rows.sort((a, b) => a.price - b.price);
+  document.getElementById('count-' + shop.token).textContent = `(${rows.length.toLocaleString()})`;
+  document.getElementById('list-' + shop.token).innerHTML = rows.map(card).join('');
+}
+function render() { SHOPS.forEach(renderShop); }
+
+async function loadShop(shop) {
+  const statusEl = document.getElementById('status-' + shop.token);
   try {
-    const res = await fetch(`${API_BASE}/deals?${QUERY}`);
+    const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shop.token}&max=${PER_SHOP_MAX}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const payload = await res.json();
-    DATA = payload.deals || [];
-    [...new Set(DATA.map(d => d.shop))].sort().forEach(s => {
-      const o = document.createElement('option'); o.value = s; o.textContent = s; shopSel.appendChild(o);
-    });
-    const when = payload.generated_at ? new Date(payload.generated_at).toLocaleString('ko-KR') : '';
-    sub.textContent = `할인 ${DATA.length.toLocaleString()}개 · ${when} 기준 (인기순)`;
-    render();
+    const p = await res.json();
+    store[shop.token] = p.deals || [];
+    statusEl.style.display = 'none';
+    if (p.generated_at) {
+      sub.textContent = `상점별 할인 목록 · ${new Date(p.generated_at).toLocaleString('ko-KR')} 기준 (인기순)`;
+    }
   } catch (e) {
-    sub.textContent = '';
-    statusEl.innerHTML = `⚠️ 데이터를 불러오지 못했어요. (${esc(e.message)})<br>` +
-      `<small>index.html 의 <code>API_BASE</code> 가 배포한 Worker URL 인지 확인하세요.</small>`;
+    statusEl.innerHTML = `⚠️ 불러오기 실패 (${esc(e.message)}) — index.html 의 <code>API_BASE</code> 확인`;
+    store[shop.token] = [];
   }
+  renderShop(shop);
 }
 
 q.addEventListener('input', render);
 sortSel.addEventListener('change', render);
-shopSel.addEventListener('change', render);
-load();
+SHOPS.forEach(loadShop);
 </script>
 </body>
 </html>
