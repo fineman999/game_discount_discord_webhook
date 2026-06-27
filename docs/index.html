@@ -92,6 +92,7 @@
     <button class="tab active" data-tab="all">전체</button>
     <button class="tab" data-tab="steam"><i class="fab fa-steam"></i> Steam</button>
     <button class="tab" data-tab="epic"><i class="fas fa-ghost"></i> Epic</button>
+    <button class="tab" data-tab="watch"><i class="fas fa-heart"></i> 찜</button>
   </nav>
 
   <div class="search-filter-container">
@@ -165,6 +166,19 @@ function indexById(rows) {
   return m;
 }
 
+// 행 배열을 게임 UUID 로 묶는다 (같은 게임의 여러 상점 가격을 한 그룹으로).
+function groupRows(rows) {
+  const m = new Map(), order = [];
+  for (const r of rows || []) {
+    let g = m.get(r.id);
+    if (!g) { g = { id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [] }; m.set(r.id, g); order.push(g); }
+    g.offers.push(r);
+    if (!g.thumb) g.thumb = r.thumb;
+    if (!g.banner) g.banner = r.banner;
+  }
+  return order;
+}
+
 // 현재 탭의 게임 그룹 목록.
 // all: 통합 인기순(store._all)으로 순서를 잡고, Steam·Epic 목록에서 같은 게임의 가격을 교차 병합.
 // (ITAD deals/v2 는 통합 조회 시 게임당 1개만 주므로, 양쪽 가격은 상점별 목록에서 채운다)
@@ -188,6 +202,7 @@ function groupsForTab(tab) {
     }
     return groups;
   }
+  if (tab === 'watch') return groupRows(store._watch);
   return (store[tab] || []).map(r => ({ id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [r] }));
 }
 
@@ -246,7 +261,11 @@ function render() {
   countEl.textContent = `${groups.length.toLocaleString()}개`;
   listEl.innerHTML = groups.map(gameCard).join('');
   statusEl.style.display = groups.length ? 'none' : 'block';
-  if (!groups.length) statusEl.textContent = term ? '검색 결과가 없어요.' : '불러오는 중…';
+  if (!groups.length) {
+    if (term) statusEl.textContent = '검색 결과가 없어요.';
+    else if (activeTab === 'watch') statusEl.textContent = '찜한 게임 중 현재 할인 중인 게임이 없어요. (config.yaml 의 watchlist 설정)';
+    else statusEl.textContent = '불러오는 중…';
+  }
 }
 
 async function loadFeed(key, shopsParam, max) {
@@ -265,6 +284,19 @@ async function loadFeed(key, shopsParam, max) {
   render();
 }
 
+// "찜" 탭: 봇이 만든 정적 파일(watchlist.json)을 읽는다 (Worker 아님, 같은 오리진).
+async function loadWatchlist() {
+  try {
+    const res = await fetch('watchlist.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const p = await res.json();
+    store._watch = p.deals || [];
+  } catch {
+    store._watch = []; // 파일 없거나 비어있으면 빈 찜 목록
+  }
+  render();
+}
+
 document.getElementById('tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.tab');
   if (!btn) return;
@@ -278,6 +310,7 @@ sortSel.addEventListener('change', render);
 loadFeed('steam', 'steam', PER_SHOP_MAX);
 loadFeed('epic', 'epic', PER_SHOP_MAX);
 loadFeed('_all', 'steam,epic', COMBINED_MAX);  // 전체 탭 인기순 순서
+loadWatchlist();                               // 찜 탭
 </script>
 </body>
 </html>
