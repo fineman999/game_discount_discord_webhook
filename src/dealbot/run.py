@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -82,20 +83,30 @@ def _collect_watchlist_deals(
     return deals, watch_by_id
 
 
-def _collect_broadcast_deals(client: ITADClient, cfg: Config) -> list[Deal]:
-    """할인 중인 게임을 인기순으로 모아 Deal 목록으로 만든다 (할인율 컷 없음)."""
-    log.info("deals 모드: 할인 중인 게임 인기순 최대 %d개 조회 중...", cfg.deals_max_items)
-    items = client.iter_deals(sort="rank", max_items=cfg.deals_max_items)
+def _collect_shop_deals(client: ITADClient, cfg: Config, token: str) -> list[Deal]:
+    """한 상점(token)의 할인을 인기순으로 모은다. 상점 ID 로 서버단 필터링."""
+    shop_ids = client.resolve_shop_ids([token]) if token else None
+    if token and not shop_ids:
+        log.warning("'%s' → ITAD 상점 ID 해석 실패, 이름 부분일치로 폴백", token)
+    items = client.iter_deals(sort="rank", shop_ids=shop_ids, max_items=cfg.deals_max_items)
+    name_filter = [token] if token else None
     deals: list[Deal] = []
     for item in items:
         try:
-            deal = parse_deal_item(item, cfg.shops)
+            deal = parse_deal_item(item, name_filter)
         except Exception:
             log.exception("딜 파싱 오류: %s", item.get("id"))
             continue
         if deal is not None:
             deals.append(deal)
     return deals
+
+
+def _review_tag(d: Deal) -> str:
+    """dry-run 출력용 Steam 평가 꼬리표 (없으면 빈 문자열)."""
+    if d.review_score is None:
+        return ""
+    return f" ⭐{d.review_score}%({d.review_count:,})"
 
 
 def _enrich_reviews(client: ITADClient, deals: list[Deal]) -> None:
@@ -148,36 +159,43 @@ def _run_watchlist(client: ITADClient, cfg: Config, dry_run: bool) -> int:
 
 
 def _run_deals(client: ITADClient, cfg: Config, dry_run: bool) -> int:
-    """deals 모드: 동적 페이지(Worker)가 목록을 담당하므로 여기선 Discord 요약만 보낸다.
+    """deals 모드: 설정된 상점마다 따로 조회해 Discord 요약을 상점당 1개씩 보낸다.
 
-    상태 저장/페이지 생성을 하지 않아 git 에 데이터를 커밋하지 않는다 (no churn).
+    동적 페이지(Worker)가 목록을 담당하므로 상태 저장/페이지 생성은 하지 않는다 (git no churn).
     """
-    deals = _collect_broadcast_deals(client, cfg)
-    log.info("할인 %d개", len(deals))
-
-    top = deals[:5]
-    _enrich_reviews(client, top)
-    embed = build_summary_embed(
-        top,
-        total=len(deals),
-        new_count=0,
-        page_url=cfg.page_base_url,
-        title=cfg.page_title,
-    )
+    tokens = cfg.shops or [""]  # 상점 미설정 시 전체 1개로 처리
+    summaries: list[tuple[str, list[Deal], list[Deal], dict]] = []
+    for token in tokens:
+        deals = _collect_shop_deals(client, cfg, token)
+        label = deals[0].shop_name if deals else (token.title() or "전체")
+        top = deals[:5]
+        _enrich_reviews(client, top)
+        anchor = f"#{token}" if token and cfg.page_base_url else ""
+        embed = build_summary_embed(
+            top,
+            total=len(deals),
+            new_count=0,
+            page_url=(cfg.page_base_url + anchor) if cfg.page_base_url else "",
+            title=f"{cfg.page_title} — {label}",
+        )
+        summaries.append((label, deals, top, embed))
+        log.info("[%s] 할인 %d개", label, len(deals))
 
     if dry_run:
-        print("\n=== DRY-RUN: deals 요약 (실제 전송 안 함) ===")
-        print(f"현재 할인 {len(deals):,}개")
+        print("\n=== DRY-RUN: deals 요약 (상점별, 실제 전송 안 함) ===")
+        for label, deals, top, _ in summaries:
+            print(f"\n[{label}] 현재 할인 {len(deals):,}개 — 인기 TOP 5:")
+            for d in top:
+                price = format_price(d.price_new, d.currency)
+                print(f"  - {d.title} [-{d.cut}% {price}]{_review_tag(d)}")
         if not cfg.page_base_url:
-            print("※ config.yaml 의 page.base_url 미설정 → Discord 링크 비활성")
-        print("인기 TOP 5:")
-        for d in top:
-            r = f" ⭐{d.review_score}%({d.review_count:,})" if d.review_score is not None else ""
-            price = format_price(d.price_new, d.currency)
-            print(f"  - {d.title} [{d.shop_name} -{d.cut}% {price}]{r}")
+            print("\n※ config.yaml 의 page.base_url 미설정 → Discord 링크 비활성")
         print("===\n")
     else:
-        send_summary(embed, cfg.webhook_url)
+        for i, (_label, _deals, _top, embed) in enumerate(summaries):
+            send_summary(embed, cfg.webhook_url)
+            if i < len(summaries) - 1:
+                time.sleep(1.0)
     return 0
 
 

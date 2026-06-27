@@ -2,7 +2,28 @@
 
 from __future__ import annotations
 
-from dealbot.sources.itad import parse_deal_item, parse_prices
+from dealbot.sources.itad import match_shop_ids, parse_deal_item, parse_prices
+
+SHOPS_FIXTURE = [
+    {"id": 61, "title": "Steam"},
+    {"id": 16, "title": "Epic Game Store"},
+    {"id": 35, "title": "GOG"},
+    {"id": 36, "title": "GreenManGaming"},
+]
+
+
+def test_match_shop_ids_epic_and_steam():
+    assert set(match_shop_ids(SHOPS_FIXTURE, ["steam", "epic"])) == {61, 16}
+
+
+def test_match_shop_ids_substring_only():
+    # "epic" 은 "Epic Game Store" 에만 매칭, GOG/GMG 는 제외
+    assert match_shop_ids(SHOPS_FIXTURE, ["epic"]) == [16]
+
+
+def test_match_shop_ids_no_match():
+    assert match_shop_ids(SHOPS_FIXTURE, ["origin"]) == []
+
 
 # /games/prices/v3 게임 객체 fixture (docs 예시 구조 기반, KRW 로 각색)
 PRICES_GAME = {
@@ -53,6 +74,18 @@ def test_parse_prices_shop_filter():
     deals = parse_prices(PRICES_GAME, title="Elden Ring", shops=["steam"])
     assert len(deals) == 1
     assert deals[0].shop_name == "Steam"
+
+
+def test_parse_prices_shop_filter_epic_substring():
+    # "epic" 토큰이 ITAD 의 "Epic Game Store" 에 부분 일치해야 한다.
+    deals = parse_prices(PRICES_GAME, title="Elden Ring", shops=["epic"])
+    assert len(deals) == 1
+    assert deals[0].shop_name == "Epic Game Store"
+
+
+def test_parse_prices_shop_filter_steam_and_epic():
+    deals = parse_prices(PRICES_GAME, title="Elden Ring", shops=["steam", "epic"])
+    assert {d.shop_name for d in deals} == {"Steam", "Epic Game Store"}
 
 
 def test_parse_prices_thumbnail_passthrough():

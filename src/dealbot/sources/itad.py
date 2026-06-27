@@ -90,7 +90,8 @@ def _parse_deal_obj(
         return None
     shop = deal_obj.get("shop") or {}
     shop_name = shop.get("name", "")
-    if shop_filter is not None and shop_name.lower() not in shop_filter:
+    # 부분 일치: config 의 "epic" 이 ITAD 의 "Epic Game Store" 에 매칭되도록.
+    if shop_filter is not None and not any(tok in shop_name.lower() for tok in shop_filter):
         return None
     price = deal_obj.get("price") or {}
     regular = deal_obj.get("regular") or {}
@@ -173,29 +174,42 @@ class ITADClient:
         data = self._request("POST", "/games/prices/v3", params=params, json=game_ids)
         return {g["id"]: g for g in data}
 
+    def get_shops(self) -> list[dict]:
+        """ITAD 상점 목록([{id, title, ...}])을 조회한다 (현재 country 기준)."""
+        return self._request("GET", "/service/shops/v1", params={"country": self.country})
+
+    def resolve_shop_ids(self, tokens: list[str]) -> list[int]:
+        """상점 이름 토큰("epic")을 ITAD 상점 ID(16)로 해석한다 (title 부분 일치)."""
+        if not tokens:
+            return []
+        return match_shop_ids(self.get_shops(), tokens)
+
     def iter_deals(
         self,
         *,
         sort: str = "rank",
         min_cut: int | None = None,
+        shop_ids: list[int] | None = None,
         limit: int = 200,
         max_items: int = 1500,
     ) -> list[dict]:
         """할인 중인 게임 목록을 페이지네이션으로 모은다 (cut>0 만).
 
-        sort="rank" 는 인기 높은 순. sort="-cut" + min_cut 지정 시 할인율 내림차순으로
-        받다가 min_cut 미만이 나오면 조기 종료한다 (정렬이 cut 기준일 때만 유효).
+        sort="rank" 는 인기 높은 순. shop_ids 지정 시 그 상점만 서버단에서 조회한다.
+        sort="-cut" + min_cut 지정 시 할인율 내림차순으로 받다가 미만이 나오면 조기 종료.
         """
         collected: list[dict] = []
         offset = 0
         while len(collected) < max_items:
             page_limit = min(limit, max_items - len(collected))
-            params = {
+            params: dict = {
                 "country": self.country,
                 "sort": sort,
                 "limit": page_limit,
                 "offset": offset,
             }
+            if shop_ids:
+                params["shops"] = ",".join(str(i) for i in shop_ids)
             data = self._request("GET", "/deals/v2", params=params)
             items = data.get("list", [])
             if not items:
@@ -217,6 +231,16 @@ class ITADClient:
     def get_game_info(self, game_id: str) -> dict:
         """게임 상세 정보({reviews, stats, players, appid, ...})를 조회한다."""
         return self._request("GET", "/games/info/v2", params={"id": game_id})
+
+
+def match_shop_ids(shops: list[dict], tokens: list[str]) -> list[int]:
+    """상점 목록에서 title 이 토큰을 부분 포함하는 상점들의 id 를 모은다."""
+    toks = [t.lower() for t in tokens]
+    return [
+        s["id"]
+        for s in shops
+        if any(tok in (s.get("title", "").lower()) for tok in toks) and "id" in s
+    ]
 
 
 def steam_review(info: dict) -> tuple[int, int] | None:
