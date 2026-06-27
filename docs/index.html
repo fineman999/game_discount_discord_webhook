@@ -128,11 +128,8 @@
 // ── 배포한 Cloudflare Worker URL (worker/README.md 참고) ──
 const API_BASE = "https://deal-proxy.chanpark.workers.dev";
 const COUNTRY = "KR";
-const PER_SHOP_MAX = 800;
-const SHOPS = [
-  { token: "steam", label: "Steam" },
-  { token: "epic", label: "Epic Games" },
-];
+const PER_SHOP_MAX = 800;   // 상점별(Steam/Epic) 탭용
+const COMBINED_MAX = 800;   // 전체 탭 인기순 순서용 (통합 조회)
 
 const store = {};
 let activeTab = "all";
@@ -162,18 +159,34 @@ function shopIcon(name) {
   return '<i class="fas fa-store"></i>';
 }
 
-// 현재 탭의 게임 그룹 목록 (all: 게임 UUID 로 묶어 상점 교차 병합)
+function indexById(rows) {
+  const m = new Map();
+  for (const r of rows || []) if (!m.has(r.id)) m.set(r.id, r);
+  return m;
+}
+
+// 현재 탭의 게임 그룹 목록.
+// all: 통합 인기순(store._all)으로 순서를 잡고, Steam·Epic 목록에서 같은 게임의 가격을 교차 병합.
+// (ITAD deals/v2 는 통합 조회 시 게임당 1개만 주므로, 양쪽 가격은 상점별 목록에서 채운다)
 function groupsForTab(tab) {
   if (tab === 'all') {
-    const m = new Map(), order = [];
-    for (const sh of SHOPS) for (const r of store[sh.token] || []) {
-      let g = m.get(r.id);
-      if (!g) { g = { id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [] }; m.set(r.id, g); order.push(g); }
-      g.offers.push(r);
-      if (!g.banner) g.banner = r.banner;
-      if (!g.thumb) g.thumb = r.thumb;
+    const steamById = indexById(store.steam);
+    const epicById = indexById(store.epic);
+    const groups = [], seen = new Set();
+    for (const r of store._all || []) {
+      if (seen.has(r.id)) continue;
+      seen.add(r.id);
+      const offers = [];
+      if (steamById.has(r.id)) offers.push(steamById.get(r.id));
+      if (epicById.has(r.id)) offers.push(epicById.get(r.id));
+      if (!offers.length) offers.push(r); // 상점별 목록 범위를 벗어난 경우 통합 결과로 폴백
+      groups.push({
+        id: r.id, title: r.title,
+        thumb: r.thumb || offers[0].thumb, banner: r.banner || offers[0].banner,
+        offers,
+      });
     }
-    return order;
+    return groups;
   }
   return (store[tab] || []).map(r => ({ id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [r] }));
 }
@@ -236,17 +249,17 @@ function render() {
   if (!groups.length) statusEl.textContent = term ? '검색 결과가 없어요.' : '불러오는 중…';
 }
 
-async function loadShop(shop) {
+async function loadFeed(key, shopsParam, max) {
   try {
-    const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shop.token}&max=${PER_SHOP_MAX}`);
+    const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shopsParam}&max=${max}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const p = await res.json();
-    store[shop.token] = p.deals || [];
+    store[key] = p.deals || [];
     if (p.generated_at) {
       updateEl.textContent = `최종 업데이트: ${new Date(p.generated_at).toLocaleString('ko-KR')} · 인기순`;
     }
   } catch (e) {
-    store[shop.token] = [];
+    store[key] = [];
     statusEl.textContent = `⚠️ 불러오기 실패 (${e.message}) — index.html 의 API_BASE 확인`;
   }
   render();
@@ -262,7 +275,9 @@ document.getElementById('tabs').addEventListener('click', (e) => {
 });
 q.addEventListener('input', render);
 sortSel.addEventListener('change', render);
-SHOPS.forEach(loadShop);
+loadFeed('steam', 'steam', PER_SHOP_MAX);
+loadFeed('epic', 'epic', PER_SHOP_MAX);
+loadFeed('_all', 'steam,epic', COMBINED_MAX);  // 전체 탭 인기순 순서
 </script>
 </body>
 </html>
