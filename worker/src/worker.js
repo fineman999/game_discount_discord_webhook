@@ -69,7 +69,9 @@ async function handleDeals(request, url, env, ctx) {
         const sn = shopName.toLowerCase();
         if (![...fallbackFilter].some((tok) => sn.includes(tok))) continue;
       }
+      const assets = it.assets || {};
       rows.push({
+        id: it.id, // 게임 UUID — 상점 교차 그룹핑용
         title: it.title,
         shop: shopName,
         cut,
@@ -78,7 +80,8 @@ async function handleDeals(request, url, env, ctx) {
         low: (d.historyLow && d.historyLow.all && d.historyLow.all.amount) ?? null,
         currency: (d.price && d.price.currency) || "",
         url: d.url || "",
-        thumb: (it.assets && it.assets.boxart) || "",
+        thumb: assets.boxart || "", // 세로 박스아트 (featured 용)
+        banner: assets.banner400 || assets.banner300 || assets.boxart || "", // 가로 (리스트 용)
       });
       if (rows.length >= max) break;
     }
