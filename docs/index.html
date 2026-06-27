@@ -73,6 +73,7 @@
                     border-radius: 5px; font-weight: 800; font-size: 13px; }
   .current-price { font-weight: 700; font-size: 14px; }
   .original-price { color: var(--text-secondary); text-decoration: line-through; font-size: 12px; }
+  .until { color: #f0b86e; font-size: 11px; margin-left: 4px; white-space: nowrap; }
   .both-tag { font-size: 10px; color: var(--accent-green); border: 1px solid var(--accent-green);
               border-radius: 4px; padding: 1px 4px; margin-left: auto; }
 
@@ -153,6 +154,11 @@ function fmt(amount, cur) {
   return sym ? sym + body : body + " " + cur;
 }
 function esc(s) { const e = document.createElement('div'); e.textContent = s ?? ""; return e.innerHTML; }
+function untilStr(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d) ? "" : `~${d.getMonth() + 1}/${d.getDate()}까지`;
+}
 function shopIcon(name) {
   const n = (name || "").toLowerCase();
   if (n.includes('steam')) return '<i class="fab fa-steam"></i>';
@@ -213,6 +219,7 @@ function offerRow(o) {
       <span class="discount-badge">-${o.cut}%</span>
       <span class="current-price">${esc(fmt(o.price, o.currency))}</span>
       <span class="original-price">${esc(fmt(o.regular, o.currency))}</span>
+      ${o.expiry ? `<span class="until">${esc(untilStr(o.expiry))}</span>` : ''}
     </a>`;
 }
 

@@ -83,6 +83,8 @@ async function handleDeals(request, url, env, ctx) {
         url: d.url || "",
         thumb: assets.boxart || "", // 세로 박스아트 (featured 용)
         banner: assets.banner400 || assets.banner300 || assets.boxart || "", // 가로 (리스트 용)
+        start: d.timestamp || null, // 할인 시작
+        expiry: d.expiry || null, // 할인 종료 (없을 수 있음)
       });
       if (rows.length >= max) break;
     }

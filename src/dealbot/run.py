@@ -181,6 +181,8 @@ def _deal_row(d: Deal) -> dict:
         "url": d.url,
         "thumb": d.thumbnail or "",
         "banner": d.thumbnail or "",
+        "start": d.discount_start,
+        "expiry": d.discount_end,
     }
 
 

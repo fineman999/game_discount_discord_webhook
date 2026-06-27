@@ -107,6 +107,8 @@ def _parse_deal_obj(
         url=deal_obj.get("url", ""),
         history_low=history_low,
         thumbnail=thumbnail,
+        discount_start=deal_obj.get("timestamp"),
+        discount_end=deal_obj.get("expiry"),
     )
 
 

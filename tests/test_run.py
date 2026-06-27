@@ -19,6 +19,8 @@ def test_deal_row_maps_fields():
         url="https://itad.link/x",
         history_low=33000.0,
         thumbnail="https://img/box.jpg",
+        discount_start="2026-06-25T00:00:00Z",
+        discount_end="2026-07-09T00:00:00Z",
     )
     r = _deal_row(d)
     assert r == {
@@ -33,4 +35,6 @@ def test_deal_row_maps_fields():
         "url": "https://itad.link/x",
         "thumb": "https://img/box.jpg",
         "banner": "https://img/box.jpg",
+        "start": "2026-06-25T00:00:00Z",
+        "expiry": "2026-07-09T00:00:00Z",
     }

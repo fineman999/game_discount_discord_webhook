@@ -22,6 +22,8 @@ class Deal:
     thumbnail: str | None = None
     review_score: int | None = None  # Steam 평가 점수(%) — TOP 하이라이트용
     review_count: int | None = None  # Steam 리뷰 수 — TOP 하이라이트용
+    discount_start: str | None = None  # 할인 시작(ISO) — deal.timestamp
+    discount_end: str | None = None  # 할인 종료(ISO) — deal.expiry (없을 수 있음)
 
     @property
     def key(self) -> str:
