@@ -297,14 +297,21 @@ async function loadWatchlist() {
   render();
 }
 
+function setTab(name) {
+  if (!['all', 'steam', 'epic', 'watch'].includes(name)) return;
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  render();
+}
+
 document.getElementById('tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('.tab');
-  if (!btn) return;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  activeTab = btn.dataset.tab;
-  render();
+  if (btn) setTab(btn.dataset.tab);
 });
+// Discord 요약 링크의 #steam / #epic / #watch 로 해당 탭을 연다.
+window.addEventListener('hashchange', () => setTab(location.hash.slice(1)));
+if (location.hash) setTab(location.hash.slice(1));
+
 q.addEventListener('input', render);
 sortSel.addEventListener('change', render);
 loadFeed('steam', 'steam', PER_SHOP_MAX);
