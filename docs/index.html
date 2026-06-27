@@ -132,6 +132,7 @@ const API_BASE = "https://deal-proxy.chanpark.workers.dev";
 const COUNTRY = "KR";
 const PER_SHOP_MAX = 800;   // 상점별(Steam/Epic) 탭용
 const COMBINED_MAX = 800;   // 전체 탭 인기순 순서용 (통합 조회)
+const API_VER = "2";        // Worker 응답 스키마 변경 시 올려서 엣지 캐시 무효화
 
 const store = {};
 let activeTab = "all";
@@ -277,7 +278,7 @@ function render() {
 
 async function loadFeed(key, shopsParam, max) {
   try {
-    const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shopsParam}&max=${max}`);
+    const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shopsParam}&max=${max}&v=${API_VER}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const p = await res.json();
     store[key] = p.deals || [];
