@@ -2,7 +2,7 @@
 
 게임 할인을 **Discord로 알림** 받고, **웹 페이지**에서 둘러보는 봇 사용 가이드.
 
-- 웹 페이지: https://fineman999.github.io/game_discount_discord_webhook/
+- 웹 페이지: https://USER.github.io/game_discount_discord_webhook/
 - 설치·배포는 [README](README.md) 참고. 이 문서는 "쓰는 법" 위주.
 
 ---
