@@ -36,7 +36,17 @@ async function handleDeals(request, url, env, ctx) {
   const country = (url.searchParams.get("country") || "KR").toUpperCase();
   const max = Math.min(parseInt(url.searchParams.get("max") || "1500", 10) || 1500, HARD_MAX);
   const shopsParam = (url.searchParams.get("shops") || "").toLowerCase().trim();
-  const shops = shopsParam ? new Set(shopsParam.split(",").map((s) => s.trim())) : null;
+  const tokens = shopsParam ? shopsParam.split(",").map((s) => s.trim()).filter(Boolean) : null;
+
+  // 상점 이름 토큰("epic")을 ITAD 상점 ID(16)로 해석해 서버단에서 필터링한다.
+  // 그래야 해당 상점의 "전체" 딜이 인기순으로 들어온다 (인기순에 묻히지 않음).
+  let shopIds = null;
+  let fallbackFilter = null;
+  if (tokens) {
+    shopIds = await resolveShopIds(country, tokens);
+    if (!shopIds || !shopIds.length) fallbackFilter = new Set(tokens); // 해석 실패 시 이름 부분일치
+  }
+  const shopsQuery = shopIds && shopIds.length ? `&shops=${shopIds.join(",")}` : "";
 
   const rows = [];
   let offset = 0;
@@ -44,7 +54,7 @@ async function handleDeals(request, url, env, ctx) {
     const limit = Math.min(PAGE, max - rows.length);
     const api =
       `${ITAD}/deals/v2?key=${env.ITAD_API_KEY}` +
-      `&country=${country}&sort=rank&limit=${limit}&offset=${offset}`;
+      `&country=${country}&sort=rank&limit=${limit}&offset=${offset}${shopsQuery}`;
     const r = await fetch(api);
     if (!r.ok) return json({ error: `ITAD ${r.status}` }, 502);
     const data = await r.json();
@@ -55,7 +65,10 @@ async function handleDeals(request, url, env, ctx) {
       const cut = (d && d.cut) || 0;
       if (cut <= 0) continue;
       const shopName = (d.shop && d.shop.name) || "";
-      if (shops && !shops.has(shopName.toLowerCase())) continue;
+      if (fallbackFilter) {
+        const sn = shopName.toLowerCase();
+        if (![...fallbackFilter].some((tok) => sn.includes(tok))) continue;
+      }
       rows.push({
         title: it.title,
         shop: shopName,
@@ -82,6 +95,19 @@ async function handleDeals(request, url, env, ctx) {
   resp.headers.set("Cache-Control", `public, max-age=${CACHE_TTL}`);
   ctx.waitUntil(cache.put(cacheKey, resp.clone()));
   return resp;
+}
+
+// 상점 이름 토큰을 ITAD 상점 ID 로 해석한다 (title 부분 일치). 실패 시 null.
+async function resolveShopIds(country, tokens) {
+  const r = await fetch(`${ITAD}/service/shops/v1?country=${country}`);
+  if (!r.ok) return null;
+  const shops = await r.json();
+  const ids = [];
+  for (const s of shops) {
+    const title = (s.title || "").toLowerCase();
+    if (tokens.some((tok) => title.includes(tok))) ids.push(s.id);
+  }
+  return ids;
 }
 
 function json(obj, status = 200) {
