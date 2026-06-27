@@ -5,50 +5,50 @@
 
 ## 프로젝트 한 줄 요약
 
-Steam / Epic 게임 할인을 주기적으로 확인해 **신규 할인만** Discord로 알림하는 봇.
+ITAD로 Steam/Epic 할인을 확인해 **watchlist 신규 할인은 Discord로 알림**하고,
+**전체 할인은 동적 웹 페이지(GitHub Pages + Cloudflare Worker)** 로 보여주는 봇.
 상시 서버 없음 — **GitHub Actions(cron)** 가 스케줄 실행을 담당한다.
 
 ## 핵심 아키텍처
 
 ```
-GitHub Actions (cron)
-  → ITAD API 조회 (watchlist 게임 가격 / 전체 deals)
-  → data/state.json 과 비교, 신규·개선된 할인만 필터
-  → Discord Webhook 으로 embed POST
-  → state.json 갱신 후 commit back
+[A] watchlist 푸시 — Actions(cron)
+    config → ITAD → state.json diff → Discord webhook → state.json/watchlist.json commit back
+[B] deals 페이지 — 실시간
+    브라우저(docs/index.html, Pages) → Worker(ITAD 키 숨김, 엣지캐시 30분) → ITAD
+      → 인기순 렌더 (전체/Steam/Epic/찜 탭)
+mode: watchlist | deals | both
 ```
 
-상시 연결(Discord Bot Gateway)은 **쓰지 않는다.** 단순 push 알림이라 Webhook 한 방이면 충분.
+상시 연결(Discord Bot Gateway)은 **쓰지 않는다** — push 알림은 Webhook 으로 충분.
 
 ## 기술 스택 (고정)
 
-- **언어**: Python 3.12
-- **의존성 최소화**: `requests`, `pyyaml` 만. 새 라이브러리 추가 전 반드시 사유를 남길 것.
+- **봇**: Python **3.14** (`src/dealbot/`). 의존성 최소화 — `requests`, `pyyaml` 만. 새 라이브러리 추가 전 사유 남길 것.
     - `discord.py` **금지** — Webhook은 그냥 HTTP POST다. 게이트웨이 라이브러리 불필요.
-- **Lint/Format**: `ruff` (lint + format 둘 다)
-- **Test**: `pytest`
-- **패키지 레이아웃**: `src/dealbot/`, 엔트리포인트 `python -m dealbot`
+- **페이지**: `docs/index.html` 바닐라 JS (외부 의존성 0, Font Awesome CDN만).
+- **Worker**: `worker/` Cloudflare Worker (바닐라 JS) — ITAD 키 숨김 프록시.
+- **Lint/Format**: `ruff` (Python). **Test**: `pytest` (+ `worker.js` 는 `node --check`).
+- **패키지 레이아웃**: `src/dealbot/`, 엔트리포인트 `python -m dealbot` (`pip install -e .` 필요).
 
 ## 자주 쓰는 명령
 
 ```bash
-# 최초 1회: 가상환경 생성 + 의존성 설치
+# 최초 1회: 가상환경 + 의존성
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# 이후 작업 시작할 때마다
-source .venv/bin/activate
+pip install -e .                    # python -m dealbot 가 패키지를 찾도록
 
 # 로컬 실행 (.env 로 시크릿 주입)
-python -m dealbot
-
-# dry-run: Discord로 실제 전송하지 않고 콘솔에만 출력
-python -m dealbot --dry-run
+python -m dealbot                   # 실제 전송
+python -m dealbot --dry-run         # 콘솔만 (전송/상태변경 없음)
+python -m dealbot --search "elden"  # watchlist 용 title/steam_appid 찾기
 
 # lint / format / test
 ruff check . && ruff format --check .
 pytest -q
+node --check worker/src/worker.js   # Worker JS 문법
 ```
 
 ## 코드 컨벤션
@@ -69,6 +69,6 @@ pytest -q
 ## 작업 시작 전
 
 1. 로컬은 **venv(`.venv/`) 활성화 상태**에서 작업한다. `.venv/`는 `.gitignore`에 포함, 커밋 금지.
-2. `SPEC.md` 를 읽고 현재 Phase 범위를 확인한다.
-3. ITAD API는 v2 기준이며 게임 식별자는 **UUID**다. 엔드포인트 시그니처/응답 형태가 불확실하면 추측하지 말고 https://docs.isthereanydeal.com 으로 확인할 것.
-4. 한 번에 한 Phase씩. Phase 1(watchlist 알림)부터 동작시키고 커밋한다.
+2. 설계는 `SPEC.md`, 사용법은 `USAGE.md` 참고. Phase 1~3 은 대체로 구현 완료(추가는 다듬기 수준).
+3. ITAD API는 **v3 기준**(`prices/v3`, `deals/v2`, `lookup`/`search`/`shops`/`info`), 식별자는 **UUID**. 시그니처/응답이 불확실하면 추측 말고 https://docs.isthereanydeal.com 으로 확인.
+4. `docs/index.html`(페이지)과 `worker/`(JS)를 고치면 같은 로직이 양쪽에 있으니 함께 맞춘다. Worker 변경은 `wrangler deploy` 필요.
