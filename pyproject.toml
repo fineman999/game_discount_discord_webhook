@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dealbot"
+version = "0.1.0"
+description = "Steam/Epic 할인을 Discord로 알림하는 봇 (ITAD 기반)"
+requires-python = ">=3.14"
+dependencies = ["requests>=2.31", "pyyaml>=6"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/dealbot/page.py" = ["E501"]  # HTML/CSS/JS 템플릿 문자열의 긴 줄 허용
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,27 @@
+country: KR            # ITAD country 코드 (원화 = KR)
+mode: watchlist        # watchlist | deals
+schedule_note: "매일 09:00 KST"  # 실제 cron은 .github/workflows/notify.yml 에 정의
+
+# mode: watchlist — 아래 목록의 게임만 추적한다 (조용하고 정확함).
+watchlist:
+  - title: "Elden Ring"
+    target_price: 40000     # 이 가격(KRW) 이하로 떨어지면 알림 (선택)
+  - title: "Hades II"
+    min_discount: 20        # 최소 할인율(%) (선택)
+  - steam_appid: 1245620    # 제목 대신 Steam AppID로 지정 가능
+
+# 감시할 스토어 (비우면 전체). 스토어 이름으로 매칭 (대소문자 무관).
+shops:
+  - steam
+  - epic
+
+# mode: deals — 할인 목록은 GitHub Pages 의 "동적 페이지"(docs/index.html)가 Cloudflare
+# Worker 를 통해 실시간으로 받아 보여준다 (git 에 데이터 안 쌓임). 봇은 Discord 요약 1개만
+# 보낸다: 현재 N개 + 인기 TOP 5(Steam 평가%) + 페이지 링크.
+deals:
+  max_items: 1500      # Discord 요약의 "현재 N개" 집계 시 ITAD 인기순 상위 N개까지 조회
+
+page:
+  title: "오늘의 게임 할인"
+  base_url: ""         # 예: https://USER.github.io/REPO/  — Discord 요약의 페이지 링크에 사용
+  # ※ 페이지가 데이터를 받는 Worker URL 은 docs/index.html 의 API_BASE 상수에 입력한다.
