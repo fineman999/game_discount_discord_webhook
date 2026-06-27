@@ -1,84 +1,149 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>오늘의 게임 할인</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  :root { color-scheme: light dark; }
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-         margin: 0; padding: 1rem; max-width: 1100px; margin-inline: auto;
-         background: #0f1115; color: #e7e9ee; }
-  h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
-  .sub { color: #9aa0ab; font-size: .85rem; margin-bottom: .75rem; }
-  nav { margin-bottom: 1rem; }
-  nav a { color: #8ab4ff; text-decoration: none; margin-right: .75rem; font-size: .9rem; }
-  .controls { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem;
-              position: sticky; top: 0; background: #0f1115; padding: .5rem 0; z-index: 5; }
-  input, select { background: #1a1d24; color: #e7e9ee; border: 1px solid #2a2f3a;
-                  border-radius: 8px; padding: .5rem .6rem; font-size: .9rem; }
-  input { flex: 1 1 240px; }
-  section { margin-bottom: 2rem; }
-  h2 { font-size: 1.1rem; border-bottom: 1px solid #232834; padding-bottom: .35rem; }
-  h2 .count { color: #9aa0ab; font-weight: 400; font-size: .85rem; }
-  .card { display: grid; grid-template-columns: 56px 1fr auto; gap: .75rem;
-          align-items: center; background: #161922; border: 1px solid #232834;
-          border-radius: 10px; padding: .6rem .8rem; margin-bottom: .5rem; }
-  .card img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; background: #232834; }
-  .title { font-weight: 600; }
-  .title a { color: #e7e9ee; text-decoration: none; }
-  .title a:hover { text-decoration: underline; }
-  .meta { color: #9aa0ab; font-size: .82rem; margin-top: .15rem; }
-  .right { text-align: right; white-space: nowrap; }
-  .cut { display: inline-block; background: #1f6f43; color: #d6ffe6; font-weight: 700;
-         border-radius: 6px; padding: .1rem .4rem; font-size: .85rem; }
-  .price { font-weight: 700; margin-top: .2rem; }
-  .old { color: #7b818d; text-decoration: line-through; font-size: .8rem; margin-left: .35rem; }
-  .status { color: #9aa0ab; padding: .5rem 0; }
-  footer { color: #7b818d; font-size: .8rem; margin-top: 1.5rem; text-align: center; }
-  footer a { color: #9aa0ab; }
+  :root {
+    --bg-color: #0b0b0f;
+    --card-bg: #16171d;
+    --card-bg2: #1d1f27;
+    --text-primary: #ffffff;
+    --text-secondary: #8a8f9a;
+    --accent-green: #4ade80;
+    --accent-blue: #3b82f6;
+    --line: #262932;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, -apple-system, Helvetica, Arial, sans-serif; }
+  body { background: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; }
+  .app-container { width: 100%; max-width: 480px; min-height: 100vh; padding: 20px 16px 40px; }
+
+  .header h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .update-time { font-size: 12px; color: var(--text-secondary); margin-bottom: 18px; }
+
+  .platform-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { flex: 1; background: #23252e; border: none; color: #cfd3db; padding: 10px;
+         border-radius: 10px; font-size: 14px; cursor: pointer; display: flex; gap: 6px;
+         align-items: center; justify-content: center; transition: background .15s; }
+  .tab:hover { background: #2c2f3a; }
+  .tab.active { background: var(--accent-blue); color: #fff; font-weight: 700; }
+
+  .search-filter-container { display: flex; gap: 10px; margin-bottom: 22px; }
+  .search-bar { flex: 2; background: var(--card-bg); border-radius: 10px; padding: 12px;
+                display: flex; align-items: center; gap: 10px; }
+  .search-bar i { color: var(--text-secondary); }
+  .search-bar input { background: transparent; border: none; color: #fff; width: 100%; outline: none; font-size: 14px; }
+  .sort-dropdown { flex: 1; background: var(--card-bg); border-radius: 10px; padding: 8px 10px;
+                   font-size: 11px; color: var(--text-secondary); }
+  .sort-dropdown select { background: transparent; color: var(--accent-blue); border: none;
+                          width: 100%; font-weight: 700; outline: none; font-size: 13px; }
+
+  .featured-section { margin-bottom: 24px; }
+  .featured-section h2, .list-head h2 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .featured-section h2 i { color: var(--accent-green); }
+  .featured-carousel { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; }
+  .featured-card { position: relative; min-width: 130px; width: 130px; border-radius: 12px;
+                   overflow: hidden; background: var(--card-bg2); cursor: pointer; }
+  .featured-card img { width: 100%; height: 175px; object-fit: cover; display: block; }
+  .featured-card .cap { padding: 8px; }
+  .featured-card .cap .name { font-size: 12px; font-weight: 600; white-space: nowrap;
+                              overflow: hidden; text-overflow: ellipsis; }
+  .featured-card .badge { position: absolute; top: 8px; left: 8px; background: var(--accent-green);
+                          color: #04130a; padding: 3px 7px; border-radius: 6px; font-weight: 800; font-size: 12px; }
+
+  .list-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .list-head .count { color: var(--text-secondary); font-size: 13px; }
+
+  .game-item { background: var(--card-bg); border-radius: 16px; padding: 12px; display: flex;
+               gap: 14px; margin-bottom: 12px; }
+  .game-thumb img { width: 120px; height: 68px; border-radius: 8px; object-fit: cover; background: var(--card-bg2); }
+  .game-info { flex: 1; min-width: 0; }
+  .game-info h3 { font-size: 15px; margin-bottom: 8px; }
+  .offer-row { display: flex; align-items: center; gap: 8px; text-decoration: none;
+               color: inherit; padding: 4px 0; flex-wrap: wrap; }
+  .offer-row + .offer-row { border-top: 1px dashed var(--line); }
+  .platform-info { font-size: 12px; color: var(--text-secondary); display: inline-flex; gap: 5px;
+                   align-items: center; min-width: 96px; }
+  .platform-info .fa-steam { color: #c7d5e0; }
+  .platform-info .fa-ghost { color: #cdb4ff; }
+  .discount-badge { background: var(--accent-green); color: #04130a; padding: 2px 6px;
+                    border-radius: 5px; font-weight: 800; font-size: 13px; }
+  .current-price { font-weight: 700; font-size: 14px; }
+  .original-price { color: var(--text-secondary); text-decoration: line-through; font-size: 12px; }
+  .both-tag { font-size: 10px; color: var(--accent-green); border: 1px solid var(--accent-green);
+              border-radius: 4px; padding: 1px 4px; margin-left: auto; }
+
+  .status { color: var(--text-secondary); padding: 24px 0; text-align: center; }
+  footer { color: #6b7079; font-size: 12px; margin-top: 24px; text-align: center; }
+  footer a { color: var(--text-secondary); }
 </style>
 </head>
 <body>
-<h1>오늘의 게임 할인</h1>
-<div class="sub" id="sub">상점별 할인 목록 (ITAD 인기순)</div>
-<nav id="nav"></nav>
-<div class="controls">
-  <input id="q" type="search" placeholder="게임 이름 검색…" autocomplete="off">
-  <select id="sort">
-    <option value="pop">인기순</option>
-    <option value="cut">할인율 높은순</option>
-    <option value="price">가격 낮은순</option>
-  </select>
+<div class="app-container">
+  <header class="header">
+    <h1>오늘의 게임 할인</h1>
+    <p class="update-time" id="update-time">불러오는 중…</p>
+  </header>
+
+  <nav class="platform-tabs" id="tabs">
+    <button class="tab active" data-tab="all">전체</button>
+    <button class="tab" data-tab="steam"><i class="fab fa-steam"></i> Steam</button>
+    <button class="tab" data-tab="epic"><i class="fas fa-ghost"></i> Epic</button>
+  </nav>
+
+  <div class="search-filter-container">
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input id="q" type="search" placeholder="게임 이름 검색…" autocomplete="off">
+    </div>
+    <div class="sort-dropdown">
+      <span>정렬</span>
+      <select id="sort">
+        <option value="pop">인기순</option>
+        <option value="cut">할인율순</option>
+        <option value="price">가격 낮은순</option>
+      </select>
+    </div>
+  </div>
+
+  <section class="featured-section" id="featured-section">
+    <h2><i class="fas fa-fire"></i> Biggest Steals</h2>
+    <div class="featured-carousel" id="featured"></div>
+  </section>
+
+  <div class="list-head">
+    <h2>할인 목록</h2>
+    <span class="count" id="count"></span>
+  </div>
+  <main id="list"></main>
+  <div class="status" id="status">⏳ 불러오는 중…</div>
+
+  <footer>데이터 제공 <a href="https://isthereanydeal.com" rel="noopener">IsThereAnyDeal</a></footer>
 </div>
-<div id="sections"></div>
-<footer>데이터 제공 <a href="https://isthereanydeal.com" rel="noopener">IsThereAnyDeal</a></footer>
 
 <script>
 // ── 배포한 Cloudflare Worker URL (worker/README.md 참고) ──
 const API_BASE = "https://deal-proxy.chanpark.workers.dev";
 const COUNTRY = "KR";
 const PER_SHOP_MAX = 800;
-// 표로 따로 보여줄 상점들 (token 은 Worker 가 ITAD 상점 ID 로 해석)
 const SHOPS = [
   { token: "steam", label: "Steam" },
   { token: "epic", label: "Epic Games" },
 ];
 
 const store = {};
+let activeTab = "all";
 const q = document.getElementById('q');
 const sortSel = document.getElementById('sort');
-const sub = document.getElementById('sub');
-
-document.getElementById('nav').innerHTML =
-  SHOPS.map(s => `<a href="#${s.token}">${s.label}</a>`).join('');
-document.getElementById('sections').innerHTML = SHOPS.map(s => `
-  <section id="${s.token}">
-    <h2>${s.label} <span class="count" id="count-${s.token}"></span></h2>
-    <div class="status" id="status-${s.token}">⏳ 불러오는 중…</div>
-    <div class="list" id="list-${s.token}"></div>
-  </section>`).join('');
+const listEl = document.getElementById('list');
+const featEl = document.getElementById('featured');
+const featSection = document.getElementById('featured-section');
+const statusEl = document.getElementById('status');
+const countEl = document.getElementById('count');
+const updateEl = document.getElementById('update-time');
 
 const SYM = { KRW: "₩", USD: "$", EUR: "€", GBP: "£", JPY: "¥" };
 function fmt(amount, cur) {
@@ -90,52 +155,111 @@ function fmt(amount, cur) {
   return sym ? sym + body : body + " " + cur;
 }
 function esc(s) { const e = document.createElement('div'); e.textContent = s ?? ""; return e.innerHTML; }
+function shopIcon(name) {
+  const n = (name || "").toLowerCase();
+  if (n.includes('steam')) return '<i class="fab fa-steam"></i>';
+  if (n.includes('epic')) return '<i class="fas fa-ghost"></i>';
+  return '<i class="fas fa-store"></i>';
+}
 
-function card(d) {
+// 현재 탭의 게임 그룹 목록 (all: 게임 UUID 로 묶어 상점 교차 병합)
+function groupsForTab(tab) {
+  if (tab === 'all') {
+    const m = new Map(), order = [];
+    for (const sh of SHOPS) for (const r of store[sh.token] || []) {
+      let g = m.get(r.id);
+      if (!g) { g = { id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [] }; m.set(r.id, g); order.push(g); }
+      g.offers.push(r);
+      if (!g.banner) g.banner = r.banner;
+      if (!g.thumb) g.thumb = r.thumb;
+    }
+    return order;
+  }
+  return (store[tab] || []).map(r => ({ id: r.id, title: r.title, thumb: r.thumb, banner: r.banner, offers: [r] }));
+}
+
+function offerRow(o) {
   return `
-    <div class="card">
-      ${d.thumb ? `<img loading="lazy" src="${esc(d.thumb)}" alt="">` : '<div></div>'}
-      <div>
-        <div class="title"><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)}</a></div>
-        <div class="meta">${esc(d.shop)}${d.low != null ? ' · 역대최저 ' + esc(fmt(d.low, d.currency)) : ''}</div>
-      </div>
-      <div class="right">
-        <span class="cut">-${d.cut}%</span>
-        <div class="price">${esc(fmt(d.price, d.currency))}<span class="old">${esc(fmt(d.regular, d.currency))}</span></div>
+    <a class="offer-row" href="${esc(o.url)}" target="_blank" rel="noopener">
+      <span class="platform-info">${shopIcon(o.shop)} ${esc(o.shop)}</span>
+      <span class="discount-badge">-${o.cut}%</span>
+      <span class="current-price">${esc(fmt(o.price, o.currency))}</span>
+      <span class="original-price">${esc(fmt(o.regular, o.currency))}</span>
+    </a>`;
+}
+
+function gameCard(g) {
+  const offers = [...g.offers].sort((a, b) => b.cut - a.cut);
+  const both = offers.length > 1 ? '<span class="both-tag">Steam+Epic</span>' : '';
+  return `
+    <div class="game-item">
+      <div class="game-thumb"><img loading="lazy" src="${esc(g.banner || g.thumb)}" alt=""></div>
+      <div class="game-info">
+        <h3 style="display:flex;align-items:center">${esc(g.title)}${both}</h3>
+        ${offers.map(offerRow).join('')}
       </div>
     </div>`;
 }
 
-function renderShop(shop) {
-  const data = store[shop.token] || [];
-  const term = q.value.trim().toLowerCase();
-  let rows = data.filter(d => !term || d.title.toLowerCase().includes(term));
-  const by = sortSel.value;
-  if (by === 'cut') rows.sort((a, b) => b.cut - a.cut);
-  else if (by === 'price') rows.sort((a, b) => a.price - b.price);
-  document.getElementById('count-' + shop.token).textContent = `(${rows.length.toLocaleString()})`;
-  document.getElementById('list-' + shop.token).innerHTML = rows.map(card).join('');
+function featuredCard(g) {
+  const best = g.offers.reduce((a, b) => (b.cut > a.cut ? b : a));
+  return `
+    <div class="featured-card" onclick="window.open('${esc(best.url)}','_blank')">
+      <span class="badge">-${best.cut}%</span>
+      <img loading="lazy" src="${esc(g.thumb || g.banner)}" alt="">
+      <div class="cap"><div class="name">${esc(g.title)}</div></div>
+    </div>`;
 }
-function render() { SHOPS.forEach(renderShop); }
+
+function render() {
+  const term = q.value.trim().toLowerCase();
+  let groups = groupsForTab(activeTab);
+  groups.forEach(g => {
+    g.bestCut = Math.max(...g.offers.map(o => o.cut));
+    g.minPrice = Math.min(...g.offers.map(o => o.price));
+  });
+
+  // Featured: 탭 전체에서 할인율 최고 10개 (검색과 무관하게 고정)
+  const featured = [...groups].sort((a, b) => b.bestCut - a.bestCut).slice(0, 10);
+  featEl.innerHTML = featured.map(featuredCard).join('');
+  featSection.style.display = featured.length ? 'block' : 'none';
+
+  if (term) groups = groups.filter(g => g.title.toLowerCase().includes(term));
+  const by = sortSel.value;
+  if (by === 'cut') groups.sort((a, b) => b.bestCut - a.bestCut);
+  else if (by === 'price') groups.sort((a, b) => a.minPrice - b.minPrice);
+  // 'pop' 은 groupsForTab 의 인기순 유지
+
+  countEl.textContent = `${groups.length.toLocaleString()}개`;
+  listEl.innerHTML = groups.map(gameCard).join('');
+  statusEl.style.display = groups.length ? 'none' : 'block';
+  if (!groups.length) statusEl.textContent = term ? '검색 결과가 없어요.' : '불러오는 중…';
+}
 
 async function loadShop(shop) {
-  const statusEl = document.getElementById('status-' + shop.token);
   try {
     const res = await fetch(`${API_BASE}/deals?country=${COUNTRY}&shops=${shop.token}&max=${PER_SHOP_MAX}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const p = await res.json();
     store[shop.token] = p.deals || [];
-    statusEl.style.display = 'none';
     if (p.generated_at) {
-      sub.textContent = `상점별 할인 목록 · ${new Date(p.generated_at).toLocaleString('ko-KR')} 기준 (인기순)`;
+      updateEl.textContent = `최종 업데이트: ${new Date(p.generated_at).toLocaleString('ko-KR')} · 인기순`;
     }
   } catch (e) {
-    statusEl.innerHTML = `⚠️ 불러오기 실패 (${esc(e.message)}) — index.html 의 <code>API_BASE</code> 확인`;
     store[shop.token] = [];
+    statusEl.textContent = `⚠️ 불러오기 실패 (${e.message}) — index.html 의 API_BASE 확인`;
   }
-  renderShop(shop);
+  render();
 }
 
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  activeTab = btn.dataset.tab;
+  render();
+});
 q.addEventListener('input', render);
 sortSel.addEventListener('change', render);
 SHOPS.forEach(loadShop);
