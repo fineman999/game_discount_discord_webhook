@@ -23,5 +23,5 @@ deals:
 
 page:
   title: "오늘의 게임 할인"
-  base_url: ""         # 예: https://USER.github.io/REPO/  — Discord 요약의 페이지 링크에 사용
+  base_url: "https://fineman999.github.io/game_discount_discord_webhook/"  # Discord 요약 링크용
   # ※ 페이지가 데이터를 받는 Worker URL 은 docs/index.html 의 API_BASE 상수에 입력한다.
