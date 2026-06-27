@@ -164,6 +164,10 @@ class ITADClient:
             return {}
         return self._request("POST", "/lookup/id/title/v1", json=titles)
 
+    def search(self, title: str, results: int = 10) -> list[dict]:
+        """제목으로 게임을 검색한다 (부분/유사 매칭). [{id, title, assets, ...}]."""
+        return self._request("GET", "/games/search/v1", params={"title": title, "results": results})
+
     # --- 가격/딜 ------------------------------------------------------------
 
     def get_prices(self, game_ids: list[str]) -> dict[str, dict]:

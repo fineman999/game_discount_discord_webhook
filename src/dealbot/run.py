@@ -49,7 +49,7 @@ def _resolve_watchlist(
                 thumb = (game.get("assets") or {}).get("boxart")
                 resolved.append((w, game["id"], game.get("title", ""), thumb))
             elif w.title:
-                gid = title_map.get(w.title)
+                gid = title_map.get(w.title) or _search_first_id(client, w.title)
                 if not gid:
                     log.warning("'%s' → ITAD UUID 해석 실패 (정확한 타이틀인지 확인)", w.title)
                     continue
@@ -57,6 +57,46 @@ def _resolve_watchlist(
         except Exception:
             log.exception("watchlist 항목 해석 중 오류: %r", w)
     return resolved
+
+
+def _search_first_id(client: ITADClient, title: str) -> str | None:
+    """정확 매칭 실패 시 검색으로 폴백해 첫 결과의 ITAD id 를 반환한다."""
+    try:
+        results = client.search(title, results=1)
+    except Exception:
+        log.exception("검색 폴백 실패: %s", title)
+        return None
+    if results:
+        log.info("'%s' → 검색 폴백으로 해석: %s", title, results[0].get("title"))
+        return results[0].get("id")
+    return None
+
+
+def search_games(client: ITADClient, query: str) -> int:
+    """게임을 검색해 title 과 steam_appid 를 출력한다 (config.yaml 채우기 보조)."""
+    try:
+        results = client.search(query, results=8)
+    except Exception:
+        log.exception("검색 실패")
+        return 1
+    if not results:
+        print(f"'{query}' 검색 결과가 없어요.")
+        return 0
+    print(f"\n'{query}' 검색 결과 — config.yaml watchlist 에 복사하세요:\n")
+    for g in results:
+        appid = None
+        try:
+            appid = client.get_game_info(g["id"]).get("appid")
+        except Exception:
+            pass
+        if appid:
+            print(f"  {g.get('title')}")
+            print(f"    - steam_appid: {appid}")
+        else:
+            print(f"  {g.get('title')}   (Steam 외 — title 로 추가)")
+            print(f'    - title: "{g.get("title")}"')
+    print()
+    return 0
 
 
 def _collect_watchlist_deals(
@@ -245,6 +285,13 @@ def _run_deals(client: ITADClient, cfg: Config, dry_run: bool) -> int:
             if i < len(summaries) - 1:
                 time.sleep(1.0)
     return 0
+
+
+def run_search(query: str) -> int:
+    """`--search` 진입점: ITAD 에서 게임을 검색해 식별자를 출력한다."""
+    cfg = load_config(require_webhook=False)
+    client = ITADClient(cfg.api_key, cfg.country)
+    return search_games(client, query)
 
 
 def run(dry_run: bool = False) -> int:

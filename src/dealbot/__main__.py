@@ -7,7 +7,7 @@ import logging
 import sys
 
 from dealbot.config import ConfigError
-from dealbot.run import run
+from dealbot.run import run, run_search
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -16,6 +16,11 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run",
         action="store_true",
         help="Discord 로 전송하지 않고 콘솔에만 출력 (상태도 변경 안 함)",
+    )
+    parser.add_argument(
+        "--search",
+        metavar="QUERY",
+        help="게임을 검색해 watchlist 에 넣을 title/steam_appid 를 출력하고 종료",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="DEBUG 로그 출력")
     args = parser.parse_args(argv)
@@ -26,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     try:
+        if args.search:
+            return run_search(args.search)
         return run(dry_run=args.dry_run)
     except ConfigError as exc:
         logging.error("설정 오류: %s", exc)
