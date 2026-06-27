@@ -6,12 +6,12 @@ schedule_note: "매일 09:00 KST"  # 실제 cron은 .github/workflows/notify.yml
 # 또한 현재 할인들은 페이지의 "찜" 탭에도 표시된다 (docs/watchlist.json).
 # 각 항목은 title / steam_appid 중 하나만 있어도 된다. Epic 전용 게임은 title 로 지정.
 watchlist:
-  - title: "Elden Ring"
+  - steam_appid: 1245620    # Elden Ring (store.steampowered.com/app/1245620)
     target_price: 40000     # 이 가격(KRW) 이하로 떨어지면 알림 (선택)
   - title: "Hades II"
     min_discount: 20        # 최소 할인율(%) (선택)
-  - steam_appid: 1245620    # 제목 대신 Steam AppID 로 지정 가능
-  # - title: "Alan Wake 2"  # Epic 전용 게임도 title 로 추적 가능
+  - steam_appid: 3280350    # DEATH STRANDING 2: ON THE BEACH
+  # 식별자 찾기:  python -m dealbot --search "elden ring"
 
 # 감시할 스토어 (비우면 전체). 스토어 이름으로 매칭 (대소문자 무관).
 shops:
