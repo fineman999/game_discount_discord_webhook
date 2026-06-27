@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-06-27T14:49:28Z",
+  "count": 1,
+  "deals": [
+    {
+      "id": "018d937f-6ee3-738a-b578-ddd7e9a0d24d",
+      "title": "Hades II",
+      "shop": "Steam",
+      "cut": 30,
+      "price": 22400,
+      "regular": 32000,
+      "low": 22400,
+      "currency": "KRW",
+      "url": "https://itad.link/018f4ed9-4868-701f-a1c9-ff248439e1c8/",
+      "thumb": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1779902414",
+      "banner": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1779902414"
+    }
+  ]
+}

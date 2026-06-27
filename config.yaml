@@ -1,14 +1,17 @@
 country: KR            # ITAD country 코드 (원화 = KR)
-mode: deals        # watchlist | deals
+mode: both             # watchlist | deals | both (both = 둘 다 실행)
 schedule_note: "매일 09:00 KST"  # 실제 cron은 .github/workflows/notify.yml 에 정의
 
-# mode: watchlist — 아래 목록의 게임만 추적한다 (조용하고 정확함).
+# watchlist — 아래 목록의 게임만 추적하며, 신규/개선 할인을 "항상 Discord 로" 알린다.
+# 또한 현재 할인들은 페이지의 "찜" 탭에도 표시된다 (docs/watchlist.json).
+# 각 항목은 title / steam_appid 중 하나만 있어도 된다. Epic 전용 게임은 title 로 지정.
 watchlist:
   - title: "Elden Ring"
     target_price: 40000     # 이 가격(KRW) 이하로 떨어지면 알림 (선택)
   - title: "Hades II"
     min_discount: 20        # 최소 할인율(%) (선택)
-  - steam_appid: 1245620    # 제목 대신 Steam AppID로 지정 가능
+  - steam_appid: 1245620    # 제목 대신 Steam AppID 로 지정 가능
+  # - title: "Alan Wake 2"  # Epic 전용 게임도 title 로 추적 가능
 
 # 감시할 스토어 (비우면 전체). 스토어 이름으로 매칭 (대소문자 무관).
 shops:

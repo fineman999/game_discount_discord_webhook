@@ -88,8 +88,8 @@ def load_config(
         raise ConfigError("환경변수 DISCORD_WEBHOOK_URL 가 설정되지 않았습니다.")
 
     mode = raw.get("mode", "watchlist")
-    if mode not in ("watchlist", "deals"):
-        raise ConfigError(f"mode 는 'watchlist' 또는 'deals' 여야 합니다: {mode!r}")
+    if mode not in ("watchlist", "deals", "both"):
+        raise ConfigError(f"mode 는 'watchlist' | 'deals' | 'both' 중 하나여야 합니다: {mode!r}")
 
     deals_cfg = raw.get("deals") or {}
     page_cfg = raw.get("page") or {}

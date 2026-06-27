@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import UTC, datetime
@@ -16,6 +17,7 @@ from dealbot.state import diff, load_state, save_state
 log = logging.getLogger(__name__)
 
 STATE_PATH = Path("data/state.json")
+WATCHLIST_JSON_PATH = Path("docs/watchlist.json")  # 페이지 "찜" 탭이 읽는 파일
 
 
 def _utcnow_iso() -> str:
@@ -122,7 +124,51 @@ def _enrich_reviews(client: ITADClient, deals: list[Deal]) -> None:
             d.review_score, d.review_count = review
 
 
-# --- watchlist 모드 (Discord 직접 알림) --------------------------------------
+# --- watchlist 모드 (Discord 직접 알림 + 페이지 "찜" 탭) ----------------------
+
+
+def _deal_row(d: Deal) -> dict:
+    """Deal 을 페이지가 읽는 행(row) 형식으로 변환한다 (Worker 응답과 동일 스키마)."""
+    return {
+        "id": d.game_id,
+        "title": d.title,
+        "shop": d.shop_name,
+        "cut": d.cut,
+        "price": d.price_new,
+        "regular": d.price_old,
+        "low": d.history_low,
+        "currency": d.currency,
+        "url": d.url,
+        "thumb": d.thumbnail or "",
+        "banner": d.thumbnail or "",
+    }
+
+
+def _enrich_assets(client: ITADClient, deals: list[Deal]) -> None:
+    """썸네일이 없는 딜(주로 title 기반 항목)에 box art 를 채운다. watchlist 는 작아 저렴."""
+    seen: dict[str, str | None] = {}
+    for d in deals:
+        if d.thumbnail:
+            continue
+        if d.game_id not in seen:
+            try:
+                info = client.get_game_info(d.game_id)
+                seen[d.game_id] = (info.get("assets") or {}).get("boxart")
+            except Exception:
+                log.warning("자산 조회 실패: %s", d.game_id)
+                seen[d.game_id] = None
+        if seen[d.game_id]:
+            d.thumbnail = seen[d.game_id]
+
+
+def _write_watchlist_json(deals: list[Deal], now: str) -> None:
+    """watchlist 의 현재 할인들을 페이지용 JSON 으로 기록한다 (작은 파일, 커밋됨)."""
+    payload = {"generated_at": now, "count": len(deals), "deals": [_deal_row(d) for d in deals]}
+    WATCHLIST_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
+    WATCHLIST_JSON_PATH.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    log.info("찜 데이터 기록: %s (%d개)", WATCHLIST_JSON_PATH, len(deals))
 
 
 def _print_dry(deals: list[Deal]) -> None:
@@ -149,9 +195,11 @@ def _run_watchlist(client: ITADClient, cfg: Config, dry_run: bool) -> int:
     else:
         send_deals(notify, cfg.webhook_url)
 
-    if not dry_run:  # dry-run 은 상태를 변경하지 않는다.
+    if not dry_run:  # dry-run 은 상태/파일을 변경하지 않는다.
         save_state(STATE_PATH, new_state)
         log.info("상태 저장: %s", STATE_PATH)
+        _enrich_assets(client, deals)  # 찜 카드 썸네일 보강
+        _write_watchlist_json(deals, _utcnow_iso())  # 페이지 "찜" 탭용 (전체 현재 할인)
     return 0
 
 
@@ -200,9 +248,12 @@ def _run_deals(client: ITADClient, cfg: Config, dry_run: bool) -> int:
 
 
 def run(dry_run: bool = False) -> int:
-    """봇 1회 실행. 성공 시 0 반환."""
+    """봇 1회 실행. mode 에 따라 watchlist/deals 를 실행한다 (both 면 둘 다). 성공 시 0."""
     cfg = load_config(require_webhook=not dry_run)
     client = ITADClient(cfg.api_key, cfg.country)
-    if cfg.mode == "deals":
-        return _run_deals(client, cfg, dry_run)
-    return _run_watchlist(client, cfg, dry_run)
+    rc = 0
+    if cfg.mode in ("watchlist", "both"):  # watchlist 는 항상 Discord 로 알림
+        rc |= _run_watchlist(client, cfg, dry_run)
+    if cfg.mode in ("deals", "both"):
+        rc |= _run_deals(client, cfg, dry_run)
+    return rc
