@@ -1,0 +1,8 @@
+name = "deal-proxy"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# 배포 전:
+#   cd worker && npm i -g wrangler   (또는 npx 사용)
+#   npx wrangler secret put ITAD_API_KEY   # ITAD 키 입력 (코드/깃에 안 남음)
+#   npx wrangler deploy                    # https://deal-proxy.<subdomain>.workers.dev 발급
