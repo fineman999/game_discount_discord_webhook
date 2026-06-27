@@ -5,6 +5,8 @@
 
 데이터 소스는 [IsThereAnyDeal(ITAD) API](https://docs.isthereanydeal.com) 단일 소스.
 
+> 👉 **쓰는 법(게임 추가·모드·페이지·명령어·FAQ)은 [USAGE.md](USAGE.md) 참고.** 이 문서는 설치·배포 위주.
+
 ## 동작 방식
 
 ```
