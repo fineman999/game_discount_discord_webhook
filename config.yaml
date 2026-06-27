@@ -1,5 +1,5 @@
 country: KR            # ITAD country 코드 (원화 = KR)
-mode: watchlist        # watchlist | deals
+mode: deals        # watchlist | deals
 schedule_note: "매일 09:00 KST"  # 실제 cron은 .github/workflows/notify.yml 에 정의
 
 # mode: watchlist — 아래 목록의 게임만 추적한다 (조용하고 정확함).
