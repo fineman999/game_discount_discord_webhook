@@ -1,22 +1,7 @@
 {
-  "generated_at": "2026-06-27T15:26:59Z",
+  "generated_at": "2026-06-28T00:39:30Z",
   "count": 2,
   "deals": [
-    {
-      "id": "019c5415-b335-70b0-8977-4be74e816e5f",
-      "title": "DEATH STRANDING 2: ON THE BEACH",
-      "shop": "Steam",
-      "cut": 20,
-      "price": 63840,
-      "regular": 79800,
-      "low": 63840,
-      "currency": "KRW",
-      "url": "https://itad.link/019d0681-2b27-7053-9488-c2b2bf3e07fc/",
-      "thumb": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1774022728",
-      "banner": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1774022728",
-      "start": "2026-06-25T19:26:16+02:00",
-      "expiry": "2026-07-09T19:00:00+02:00"
-    },
     {
       "id": "018d937f-6ee3-738a-b578-ddd7e9a0d24d",
       "title": "Hades II",
@@ -30,6 +15,21 @@
       "thumb": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1779902414",
       "banner": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1779902414",
       "start": "2026-06-25T20:16:27+02:00",
+      "expiry": "2026-07-09T19:00:00+02:00"
+    },
+    {
+      "id": "019c5415-b335-70b0-8977-4be74e816e5f",
+      "title": "DEATH STRANDING 2: ON THE BEACH",
+      "shop": "Steam",
+      "cut": 20,
+      "price": 63840,
+      "regular": 79800,
+      "low": 63840,
+      "currency": "KRW",
+      "url": "https://itad.link/019d0681-2b27-7053-9488-c2b2bf3e07fc/",
+      "thumb": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1774022728",
+      "banner": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1774022728",
+      "start": "2026-06-25T19:26:16+02:00",
       "expiry": "2026-07-09T19:00:00+02:00"
     }
   ]
