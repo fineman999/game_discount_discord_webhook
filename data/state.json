@@ -1,5 +1,13 @@
 {
   "deals": {
+    "018d937f-6ee3-738a-b578-ddd7e9a0d24d:61": {
+      "cut": 30,
+      "notified_at": "2026-07-22T02:03:03Z",
+      "price_new": 22400,
+      "price_old": 32000,
+      "title": "Hades II",
+      "url": "https://itad.link/018f4ed9-4868-701f-a1c9-ff248439e1c8/"
+    },
     "019c5415-b335-70b0-8977-4be74e816e5f:16": {
       "cut": 20,
       "notified_at": "2026-07-17T02:05:25Z",
