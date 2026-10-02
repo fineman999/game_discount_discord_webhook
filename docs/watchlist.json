@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-01T03:35:46Z",
-  "count": 1,
+  "generated_at": "2026-10-02T03:35:42Z",
+  "count": 2,
   "deals": [
     {
       "id": "018d937f-6ee3-738a-b578-ddd7e9a0d24d",
@@ -15,7 +15,22 @@
       "thumb": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1790364922",
       "banner": "https://assets.isthereanydeal.com/018d937f-6ee3-738a-b578-ddd7e9a0d24d/boxart.jpg?t=1790364922",
       "start": "2026-09-25T19:18:19+02:00",
-      "expiry": "2026-10-01T19:00:00+02:00"
+      "expiry": "2026-10-08T19:00:00+02:00"
+    },
+    {
+      "id": "019c5415-b335-70b0-8977-4be74e816e5f",
+      "title": "DEATH STRANDING 2: ON THE BEACH",
+      "shop": "Steam",
+      "cut": 20,
+      "price": 63840,
+      "regular": 79800,
+      "low": 63840,
+      "currency": "KRW",
+      "url": "https://itad.link/019d0681-2b27-7053-9488-c2b2bf3e07fc/?app=z0k3td",
+      "thumb": "",
+      "banner": "",
+      "start": "2026-10-01T20:47:56+02:00",
+      "expiry": "2026-10-08T19:00:00+02:00"
     }
   ]
 }
