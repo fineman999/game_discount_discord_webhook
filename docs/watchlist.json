@@ -1,5 +1,21 @@
 {
-  "generated_at": "2026-11-03T04:55:28Z",
-  "count": 0,
-  "deals": []
+  "generated_at": "2026-11-04T04:25:11Z",
+  "count": 1,
+  "deals": [
+    {
+      "id": "019c5415-b335-70b0-8977-4be74e816e5f",
+      "title": "DEATH STRANDING 2: ON THE BEACH",
+      "shop": "Epic Game Store",
+      "cut": 33,
+      "price": 53460,
+      "regular": 79800,
+      "low": 53460,
+      "currency": "KRW",
+      "url": "https://itad.link/019d06bc-a4ed-732f-b977-7ec477db1903/?app=z0k3td",
+      "thumb": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1791022209",
+      "banner": "https://assets.isthereanydeal.com/019c5415-b335-70b0-8977-4be74e816e5f/boxart.jpg?t=1791022209",
+      "start": "2026-11-03T17:12:38+01:00",
+      "expiry": "2026-11-10T17:00:00+01:00"
+    }
+  ]
 }
